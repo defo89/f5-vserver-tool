@@ -1,0 +1,4 @@
+f5-sdk
+requests
+f5-icontrol-rest
+configparser

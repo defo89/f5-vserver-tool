@@ -6,7 +6,7 @@
 # Date:  11.10.2018
 #
 
-import ConfigParser
+import configparser
 import argparse
 import getpass
 import os
@@ -49,6 +49,10 @@ def parseArgs():
 	# LIST VS
 	parser.add_argument("--list-vserver", dest="listVirtualServer", action="store_true",
 	                    help="List all virtual server.")
+
+	# LIST VS DETAILS
+	parser.add_argument("--list-vserver-details", dest="listVirtualServerDetails", action="store_true",
+	                    help="List all virtual server details.")
 
 	# LIST POOLS
 	parser.add_argument("--list-pools", dest="listPools", action="store_true",
@@ -111,7 +115,7 @@ def parseArgs():
 
 	# sample config
 	if parser.printconfig:
-		print SAMPLE_CONFIG
+		print(SAMPLE_CONFIG)
 		sys.exit(0)
 
 	# configfile 
@@ -119,17 +123,17 @@ def parseArgs():
 		configfile = parser.config
 
 		if not os.path.isfile(configfile):
-			print "File \"%s\" does not exist." % (configfile)
-			print "Exiting."
+			print("File \"%s\" does not exist." % (configfile))
+			print("Exiting.")
 			sys.exit(1)
 		else:
 			readConfig(configHandler(configfile))
 	else:
-		configfile = "/etc/loadbalancer.conf"
+		configfile = "loadbalancer.conf"
 
 		if not os.path.isfile(configfile):
-			print "File \"%s\" does not exist." % (configfile)
-			print "Exiting."
+			print("File \"%s\" does not exist." % (configfile))
+			print("Exiting.")
 			sys.exit(1)
 		else:
 			readConfig(configHandler(configfile))
@@ -155,7 +159,7 @@ def parseArgs():
 	# loadbalancer.py
 	if not loadbalancerValue:
 		if parser.loadbalancer is None:
-			print "Loadbalancer is not specified in configfile or has not been passed as option.\nExiting."
+			print("Loadbalancer is not specified in configfile or has not been passed as option.\nExiting.")
 			sys.exit(1)
 		else:
 			loadbalancer = parser.loadbalancer
@@ -165,7 +169,7 @@ def parseArgs():
 	# devicegroup
 	if not devicegroupValue:
 		if parser.devicegroup is None:
-			print "Devicegroup is not specified in configfile or has not been passed as option.\nExiting."
+			print("Devicegroup is not specified in configfile or has not been passed as option.\nExiting.")
 			sys.exit(1)
 		else:
 			devicegroup = parser.devicegroup
@@ -194,6 +198,11 @@ def parseArgs():
 	# list vs
 	if parser.listVirtualServer:
 		listVirtualServer()
+
+	# list vs details
+	if parser.listVirtualServerDetails:
+		listVirtualServerDetails()
+
 	# set 
 	if parser.setPool:
 		setPool(parser.setPool)
@@ -223,8 +232,8 @@ def readConfig(config):
 		devicegroupValue = devicegroupValue.strip('"')
 
 	except Exception as e:
-		print e
-		print "Error while reading configfile.\nExiting."
+		print(e)
+		print("Error while reading configfile.\nExiting.")
 		sys.exit(1)
 
 
@@ -236,15 +245,15 @@ def auth(loadbalancer, user, password):
 		mgmt = ManagementRoot(loadbalancer, user, password)
 
 	except Exception as e:
-		print e
-		print "Error during authentication. Please check permissions, configfile and network connectivity."
-		print "Exiting"
+		print(e)
+		print("Error during authentication. Please check permissions, configfile and network connectivity.")
+		print("Exiting")
 		sys.exit(1)
 
 
 def configHandler(configfile):
 	""" Accesses and parsed the values in the specified configfile """
-	config = ConfigParser.RawConfigParser()
+	config = configparser.RawConfigParser()
 	config.read(configfile)
 	return config
 
@@ -256,33 +265,33 @@ def setPool(options):
 		virtualServerExists = mgmt.tm.ltm.virtuals.virtual.exists(name=options[0])
 
 		if not virtualServerExists:
-			print "\"%s\" does not exist.\nExiting." % (options[0])
+			print("\"%s\" does not exist.\nExiting." % (options[0]))
 			sys.exit(1)
 		if not poolExists:
-			print "\"%s\" does not exist.\nExiting." % (options[1])
+			print("\"%s\" does not exist.\nExiting." % (options[1]))
 			sys.exit(1)
 
-		print "Changing pool for \"%s\" to \"%s\"" % (options[0], options[1])
+		print("Changing pool for \"%s\" to \"%s\"" % (options[0], options[1]))
 		virtualServer = mgmt.tm.ltm.virtuals.virtual.load(name=options[0])
 		params = {'pool': options[1]}
 		virtualServer.update(**params)
 		forceSync()
 		sys.exit(0)
 	except Exception as e:
-		print e
+		print(e)
 		sys.exit(1)
 
-	print "\n[ " + virtualServerName.upper() + " ]"
-	print "Current pool: \"" + virtualServer.pool + "\""
+	print("\n[ " + virtualServerName.upper() + " ]")
+	print("Current pool: \"" + virtualServer.pool + "\"")
 
 	if virtualServer.pool == operationPoolName:
-		print "Nothing to do. Exiting."
+		print("Nothing to do. Exiting.")
 		sys.exit(1)
 	else:
-		print "Switching to: \"" + operationPoolName + "\""
+		print("Switching to: \"" + operationPoolName + "\"")
 		params = {'pool': operationPoolName}
 		virtualServer.update(**params)
-		print "New Pool: \"" + virtualServer.pool + "\""
+		print("New Pool: \"" + virtualServer.pool + "\"")
 		forceSync(mgmt)
 		sys.exit(0)
 
@@ -292,7 +301,7 @@ def listAll():
 		pools = mgmt.tm.ltm.pools.get_collection()
 		virtualServer = mgmt.tm.ltm.virtuals.get_collection()
 
-		print "{:40}\t{:40}".format("Virtual Server", "Pool"), "Pool member"
+		print("{:40}\t{:40}".format("Virtual Server", "Pool"), "Pool member")
 
 		for vs in virtualServer:
 			try:
@@ -301,13 +310,13 @@ def listAll():
 				for pool in pools:
 					if pool.name == poolName:
 						member = getMemberOfPool(pool)
-						print "{:40}\t{:40}".format(getVSName(vs), poolName), ", ".join([str(m) for m in member])
+						print("{:40}\t{:40}".format(getVSName(vs), poolName), ", ".join([str(m) for m in member]))
 			except KeyError as e:
 				pass
 
 		sys.exit(0)
 	except Exception as e:
-		print e
+		print(e)
 		sys.exit(1)
 
 
@@ -328,6 +337,10 @@ def getVSName(vs):
 	""" returns the name of a given virtual server """
 	return vs.name
 
+def getVSDestination(vs):
+	""" returns the name of a given virtual server """
+	return vs.destination
+
 
 def listPools():
 	""" Get a list of all pools and their members """
@@ -335,10 +348,10 @@ def listPools():
 		pools = mgmt.tm.ltm.pools.get_collection()
 
 		for pool in pools:
-			print pool.name
+			print(pool.name)
 		sys.exit(0)
 	except Exception as e:
-		print e
+		print(e)
 		sys.exit(1)
 
 
@@ -348,10 +361,33 @@ def listVirtualServer():
 		virtualServer = mgmt.tm.ltm.virtuals.get_collection()
 
 		for vs in virtualServer:
-			print vs.name
+			print(vs.attrs)
 		sys.exit(0)
 	except Exception as e:
-		print e
+		print(e)
+		sys.exit(1)
+
+
+def listVirtualServerDetails():
+	try:
+		virtualServer = mgmt.tm.ltm.virtuals.get_collection()
+
+		for vs in virtualServer:
+			try:
+				vsName = getVSName(vs)
+				vsDestination = getVSDestination(vs)
+				vsDet = vsDestination.split("/")
+				vsIP = vsDet[2].split("%")
+				vsPort = vsDet[2].split(":")
+				if "apiserver" in vsName or "ingress" in vsName or "k8sniff" in vsName:
+					print("  " + vsIP[0] + ":"), 
+					print("    " + vsPort[1] + ":", vsName)
+			except KeyError as e:
+				pass
+
+		sys.exit(0)
+	except Exception as e:
+		print(e)
 		sys.exit(1)
 
 
@@ -362,10 +398,10 @@ def listNodes():
 
 		for pool in pools:
 			for member in pool.members_s.get_collection():
-				print member.name
+				print(member.name)
 		sys.exit(0)
 	except Exception as e:
-		print e
+		print(e)
 		sys.exit(1)
 
 
@@ -375,19 +411,19 @@ def showSyncStatus():
 	mgmt.tm.cm.exec_cmd('run', utilCmdArgs='config-sync to-group ' + str(devicegroup))
 	syncStatus = mgmt.tm.cm.sync_status.load(name=devicegroup)
 
-	print devicegroup, "is currently", \
+	print(devicegroup, "is currently", \
 	syncStatus.raw['entries']['https://localhost/mgmt/tm/cm/sync-status/0']['nestedStats']['entries']['status'][
-		'description']
+		'description'])
 
 
 def forceSync():
 	""" Synchronizes both BigIP-systems """
-	print "Synchronizing new configuration to device group \"%s\"" % (devicegroup)
+	print("Synchronizing new configuration to device group \"%s\"" % (devicegroup))
 	mgmt.tm.cm.exec_cmd('run', utilCmdArgs='config-sync to-group ' + str(devicegroup))
 	syncStatus = mgmt.tm.cm.sync_status.load(name=devicegroup)
-	print devicegroup, "is", \
+	print(devicegroup, "is", \
 	syncStatus.raw['entries']['https://localhost/mgmt/tm/cm/sync-status/0']['nestedStats']['entries']['status'][
-		'description']
+		'description'])
 
 
 def systemExit(code, msgs=None):
